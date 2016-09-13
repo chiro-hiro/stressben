@@ -22,51 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#include "tcpClient.h"
+#include "threadPool.h"
 
-tcpClient::tcpClient () : status (TCPCLIENT_SOCKET_NEW), fd (0) { }
-
-void
-tcpClient::open ()
-{
-  fd = socket (AF_INET, SOCK_STREAM, 0);
-  status = (fd < 0) ? TCPCLIENT_SOCKET_ERROR : TCPCLIENT_SOCKET_CONNECTING;
-}
+threadPool::threadPool () { }
 
 void
-tcpClient::connect (struct sockaddr_in serv_addr)
+threadPool::create (void* (*callBackFunction)(void * dataPtr))
 {
-  status = ::connect (fd, (struct sockaddr *) &serv_addr, sizeof (serv_addr)) < 0 ? TCPCLIENT_SOCKET_ERROR : TCPCLIENT_SOCKET_CONNECTED;
-}
-
-size_t
-tcpClient::send (void *data, size_t size)
-{
-  return write (fd, data, size);
-}
-
-size_t
-tcpClient::recv (void *data, size_t size)
-{
-  return read (fd, data, size);
+  for (int i = 0; i < THREADPOOL_MAX; i++)
+    {
+      pthread_create (&threads[i], NULL, callBackFunction, NULL);
+    }
 }
 
 void
-tcpClient::close ()
+threadPool::join ()
 {
-  status = ::close (fd) == 0 ? TCPCLIENT_SOCKET_ERROR : TCPCLIENT_SOCKET_CLOSED;
+  for (int i = 0; i < THREADPOOL_MAX; i++)
+    {
+      pthread_join (threads[i], NULL);
+    }
 }
 
-socketStatus
-tcpClient::getStatus ()
-{
-  return status;
-}
-
-void
-tcpClient::setStatus (socketStatus newStatus)
-{
-  status = newStatus;
-}
-
-tcpClient::~tcpClient(){}
+threadPool::~threadPool () { }
