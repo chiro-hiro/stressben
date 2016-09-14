@@ -40,16 +40,16 @@ SOFTWARE.
 #include "tcpClient.h" 
 #include "threadPool.h"
 
-using namespace std;
 
+using namespace std;
 
 /* Global sock address in*/
 struct sockaddr_in serv_addr;
 struct hostent *server;
 
 /* Configuration */
-char remoteHost[] = "www.google.com";
-ushort remotePort = 80;
+char remoteHost[] = "127.0.0.1";
+ushort remotePort = 3001;
 vector<string> queries;
 
 /* Terminator */
@@ -73,22 +73,36 @@ commonBenchW (void *dataPtr)
 {
   tcpClient myClient;
   unsigned int startTime, endTime;
-  //string data = "GET "
+  srand (nanotime ());
+  string data = "GET ";
+  char buffer[1024];
   while (!terminated)
     {
-      pthread_mutex_lock (&mutex1);
+      data += queries[rand () % queries.size ()];
+      data += " HTTP/1.1\n";
+      data += "Host: ";
+      data += remoteHost;
+      data += "\n\n";
       startTime = nanotime ();
       //----------------------
       myClient.open ();
       myClient.connect (serv_addr);
+      myClient.send ((void*)data.c_str (), (size_t)data.length ());
+      myClient.recv (buffer, 1023);
+      buffer[1023] = 0x0;
+      //cout << data << "\n";
+      //cout << buffer << "\n";
       myClient.close ();
       //----------------------
-      counter++;
+      
       endTime = nanotime ();
-      cout << (double) (endTime - startTime) / 1000000 << " ms" << endl;
+      pthread_mutex_lock (&mutex1);
+      cout << (double)(endTime - startTime) / 1000000 << endl;
+      counter++;
       pthread_mutex_unlock (&mutex1);
       usleep (100000);
     }
+  cout << "Terminated...\n";
 }
 
 void

@@ -42,13 +42,22 @@ tcpClient::connect (struct sockaddr_in serv_addr)
 size_t
 tcpClient::send (void *data, size_t size)
 {
-  return write (fd, data, size);
+  if (status == TCPCLIENT_SOCKET_CONNECTED)
+    {
+      return write (fd, data, size);
+    }
+
+  return -1;
 }
 
 size_t
 tcpClient::recv (void *data, size_t size)
 {
-  return read (fd, data, size);
+  if (status == TCPCLIENT_SOCKET_CONNECTED)
+    {
+      return read (fd, data, size);
+    }
+  return -1;
 }
 
 void
@@ -69,4 +78,4 @@ tcpClient::setStatus (socketStatus newStatus)
   status = newStatus;
 }
 
-tcpClient::~tcpClient(){}
+tcpClient::~tcpClient () { }
