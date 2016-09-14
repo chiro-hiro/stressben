@@ -33,12 +33,31 @@ SOFTWARE.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <fstream>
+#include <signal.h>
 #include <time.h>
+#include <vector>
 #include "tcpClient.h" 
 #include "threadPool.h"
 
 using namespace std;
 
+
+/* Global sock address in*/
+struct sockaddr_in serv_addr;
+struct hostent *server;
+
+/* Configuration */
+char remoteHost[] = "www.google.com";
+ushort remotePort = 80;
+vector<string> queries;
+
+/* Terminator */
+bool terminated = false;
+
+/* Thread MUTEX */
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+int counter = 0;
 
 unsigned int
 nanotime ()
@@ -49,43 +68,78 @@ nanotime ()
   return ts.tv_nsec;
 }
 
-void *functionCount2(void *dataPtr)
+void*
+commonBenchW (void *dataPtr)
 {
-  cout << "Thread ID :" << pthread_self () << endl;
-  return (NULL);
+  tcpClient myClient;
+  unsigned int startTime, endTime;
+  //string data = "GET "
+  while (!terminated)
+    {
+      pthread_mutex_lock (&mutex1);
+      startTime = nanotime ();
+      //----------------------
+      myClient.open ();
+      myClient.connect (serv_addr);
+      myClient.close ();
+      //----------------------
+      counter++;
+      endTime = nanotime ();
+      cout << (double) (endTime - startTime) / 1000000 << " ms" << endl;
+      pthread_mutex_unlock (&mutex1);
+      usleep (100000);
+    }
 }
 
+void
+commonBench ()
+{
+  //Create multiply thread
+  threadPool myThread;
+  myThread.create (commonBenchW);
+  myThread.join ();
+}
 
+void
+eventHandler (int signal)
+{
+  //Wait for it
+  cout << "\nDude we are falling...\n";
+  terminated = true;
+}
+
+/* Just common thing */
 int
 main (int argc, char *argv[])
 {
-  tcpClient myClient;
-  threadPool myThread;
-  myThread.create (functionCount2);
-  myThread.join ();
-  int portno, n;
-  struct sockaddr_in serv_addr;
-  struct hostent *server;
-  char test[] = "GET / HTTP/1.1\nHost: www.google.com\n\n";
-  char buffer[256] = {0};
-  unsigned int startTime, endTime;
-  portno = 80;
-  myClient.open ();
-  server = gethostbyname ("www.google.com");
+  string curLine;
+  ifstream fileRead;
+
+  //Dream catcher, Ahihi
+  signal (SIGINT, eventHandler);
+
+  //Resolve host name
+  server = gethostbyname (remoteHost);
   memset (&serv_addr, 0x0, sizeof (serv_addr));
   serv_addr.sin_family = AF_INET;
   memcpy (&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-  serv_addr.sin_port = htons (portno);
+  serv_addr.sin_port = htons (remotePort);
 
-  startTime = nanotime ();
-  myClient.connect (serv_addr);
-  myClient.send (test, strlen (test));
-  memset (buffer, 0x0, 256);
-  n = myClient.recv (buffer, 256);
-  puts (buffer);
-  
-  myClient.close ();
-  endTime = nanotime ();
-  cout << (double) (endTime - startTime) / 1000000 << " ms" << endl;
+  //Read queries
+  fileRead.open ("queries.txt", ios::in | ios::app);
+  if (fileRead.is_open ())
+    {
+      while (getline (fileRead, curLine))
+        {
+          queries.push_back (curLine);
+        }
+      fileRead.close ();
+    }
+  commonBench ();
+  //The death coming
+  while (!terminated)
+    {
+      usleep (1000000);
+    }
   return 0;
 }
