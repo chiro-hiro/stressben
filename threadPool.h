@@ -22,11 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-#include <pthread.h>
-
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 #define THREADPOOL_MAX 1024
+#include <pthread.h>
 
 class threadPool {
 private:

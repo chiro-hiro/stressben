@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+#ifndef TCPCLIENT_H
+#define TCPCLIENT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,9 +33,6 @@ SOFTWARE.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
-
-#ifndef TCPCLIENT_H
-#define TCPCLIENT_H
 
 typedef enum {
     TCPCLIENT_SOCKET_NEW = 0,
