@@ -15,7 +15,7 @@ OBJECT_FILES= $(foreach filename,$(SOURCE_FILES),$(BLD_DIR)$(filename).o)
 default:
 	mkdir -p $(BLD_DIR)
 	for filename in $(SOURCE_FILES) ; do \
-		$(CC) $(FLAGS) $(CFLAGS) -c $(SRC_DIR)$$filename.cpp -o $(BLD_DIR)$$filename.o $(INC_DIR); \
+		$(CC) $(FLAGS) -c $(SRC_DIR)$$filename.cpp -o $(BLD_DIR)$$filename.o $(INC_DIR); \
 	done
 	$(CC) $(OBJECT_FILES) -o $(BLD_DIR)$(TARGET) $(LIBS)
 	
