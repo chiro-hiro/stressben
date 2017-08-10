@@ -9,7 +9,7 @@ BLD_DIR=$(CUR_DIR)/build/
 SRC_DIR=$(CUR_DIR)/src/
 INC_DIR=-I$(SRC_DIR)
 
-SOURCE_FILES=threadPool randomize tcpClient utilities main httpRequest
+SOURCE_FILES=threadPool randomize tcpClient utilities httpRequest main
 OBJECT_FILES=$(foreach filename,$(SOURCE_FILES),$(BLD_DIR)$(filename).o)
 
 default:
