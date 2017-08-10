@@ -1,23 +1,21 @@
 #include "threadPool.h"
 
-threadPool::threadPool () { }
+threadPool::threadPool() {}
 
-void
-threadPool::create (void* (*callBackFunction)(void * dataPtr))
+void threadPool::create(void *(*callBackFunction)(void *dataPtr))
 {
   for (int i = 0; i < THREADPOOL_MAX; i++)
-    {
-      pthread_create (&threads[i], NULL, callBackFunction, NULL);
-    }
+  {
+    pthread_create(&threads[i], NULL, callBackFunction, NULL);
+  }
 }
 
-void
-threadPool::join ()
+void threadPool::join()
 {
   for (int i = 0; i < THREADPOOL_MAX; i++)
-    {
-      pthread_join (threads[i], NULL);
-    }
+  {
+    pthread_join(threads[i], NULL);
+  }
 }
 
-threadPool::~threadPool () { }
+threadPool::~threadPool() {}

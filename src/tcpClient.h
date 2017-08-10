@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h> 
+#include <netdb.h>
 
 typedef enum {
     TCPCLIENT_SOCKET_NEW = 0,
@@ -24,11 +24,13 @@ typedef enum {
     TCPCLIENT_SOCKET_ERROR = 10
 } socketStatus;
 
-class tcpClient {
-private:
+class tcpClient
+{
+  private:
     int fd;
     socketStatus status;
-public:    
+
+  public:
     tcpClient();
     void open();
     void connect(struct sockaddr_in serv_addr);
@@ -38,8 +40,6 @@ public:
     socketStatus getStatus();
     void setStatus(socketStatus newStatus);
     ~tcpClient();
-
 };
 
 #endif /* TCPCLIENT_H */
-

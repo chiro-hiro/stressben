@@ -7,8 +7,9 @@
 
 using namespace std;
 
-class randomize {
-public:
+class randomize
+{
+  public:
     randomize();
     long getRandomNumber(size_t min, size_t max);
     string getRandomCookie(size_t min, size_t max);

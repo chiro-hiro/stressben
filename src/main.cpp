@@ -12,10 +12,11 @@
 #include <fstream>
 #include <signal.h>
 #include <vector>
-#include "tcpClient.h" 
+#include "tcpClient.h"
 #include "threadPool.h"
 #include "utilities.h"
 #include "randomzie.h"
+#include "httpRequest.h"
 
 using namespace std;
 
@@ -36,15 +37,14 @@ pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 int counter = 0;
 
 /* Common bench */
-void*commonBenchW (void *dataPtr);
-void commonBench ();
+void *commonBenchW(void *dataPtr);
+void commonBench();
 
 /* */
-void*undefineBenchW (void *dataPtr);
-void undefinedBench ();
+void *undefineBenchW(void *dataPtr);
+void undefinedBench();
 
-void
-eventHandler (int signal)
+void eventHandler(int signal)
 {
   //Wait for it
   cout << "\nDude we are falling...\n";
@@ -52,140 +52,156 @@ eventHandler (int signal)
 }
 
 /* Just common thing */
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   randomize test;
-  cout << test.getRandomPath (50, 200) << endl;
-  cout << test.getRandomCookie (200, 500) << endl;
-  cout << test.getRandomNumber (1, 255) << endl;
-  cout << test.getRandomParam (10, 20) << endl;
-  cout << test.getRandomValue (15, 50) << endl;
+
+  httpRequest hr;
+  hr.push("Host", "fkguru.com");
+  hr.push("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0");
+  hr.push("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+  hr.push("Accept-Language", "en-US,en;q=0.5");
+  hr.push("Accept-Encoding", "gzip, deflate, br");
+  hr.push("Connection", "keep-alive");
+  hr.body = "helloo";
+  //hr.eraseField("Connection");
+  hr.eraseValue("fkguru");
+  cout << hr.get() << "\n";
+
+  vector<string> data;
+  data = readFile("README.md");
+  for(size_t i = 0; i < data.size(); i++){
+    cout << data[i] << "\n";
+  }
+  return 0;
+  cout << test.getRandomPath(50, 200) << endl;
+  cout << test.getRandomCookie(200, 500) << endl;
+  cout << test.getRandomNumber(1, 255) << endl;
+  cout << test.getRandomParam(10, 20) << endl;
+  cout << test.getRandomValue(15, 50) << endl;
   return 0;
   string curLine;
   ifstream fileRead;
 
   //Dream catcher, Ahihi
-  signal (SIGINT, eventHandler);
+  signal(SIGINT, eventHandler);
 
   //Resolve host name
-  server = gethostbyname (remoteHost);
-  memset (&serv_addr, 0x0, sizeof (serv_addr));
+  server = gethostbyname(remoteHost);
+  memset(&serv_addr, 0x0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  memcpy (&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-  serv_addr.sin_port = htons (remotePort);
+  memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+  serv_addr.sin_port = htons(remotePort);
 
   //Read queries
-  fileRead.open ("queries.txt", ios::in | ios::app);
-  if (fileRead.is_open ())
+  fileRead.open("queries.txt", ios::in | ios::app);
+  if (fileRead.is_open())
+  {
+    while (getline(fileRead, curLine))
     {
-      while (getline (fileRead, curLine))
-        {
-          queries.push_back (curLine);
-        }
-      fileRead.close ();
+      queries.push_back(curLine);
     }
-  commonBench ();
+    fileRead.close();
+  }
+  commonBench();
   //The death coming
   while (!terminated)
-    {
-      usleep (1000000);
-    }
+  {
+    usleep(1000000);
+  }
   return 0;
 }
 
-void*
-commonBenchW (void *dataPtr)
+void *
+commonBenchW(void *dataPtr)
 {
   tcpClient myClient;
   unsigned int startTime, endTime;
-  srand (nanoTime ());
+  srand(nanoTime());
   string data = "GET ";
   char buffer[1024];
   while (!terminated)
-    {
-      data += queries[rand () % queries.size ()];
-      data += " HTTP/1.1\n";
-      data += "Host: ";
-      data += remoteHost;
-      data += "\n\n";
-      startTime = nanoTime ();
-      //----------------------
-      myClient.open ();
-      myClient.connect (serv_addr);
-      myClient.send ((void*) data.c_str (), (size_t) data.length ());
-      myClient.recv (buffer, 1023);
-      buffer[1023] = 0x0;
-      //cout << data << "\n";
-      //cout << buffer << "\n";
-      myClient.close ();
-      //----------------------
+  {
+    data += queries[rand() % queries.size()];
+    data += " HTTP/1.1\n";
+    data += "Host: ";
+    data += remoteHost;
+    data += "\n\n";
+    startTime = nanoTime();
+    //----------------------
+    myClient.open();
+    myClient.connect(serv_addr);
+    myClient.send((void *)data.c_str(), (size_t)data.length());
+    myClient.recv(buffer, 1023);
+    buffer[1023] = 0x0;
+    //cout << data << "\n";
+    //cout << buffer << "\n";
+    myClient.close();
+    //----------------------
 
-      endTime = nanoTime ();
-      pthread_mutex_lock (&mutex1);
-      cout << (double) (endTime - startTime) / 1000000 << endl;
-      counter++;
-      pthread_mutex_unlock (&mutex1);
-      usleep (100000);
-    }
+    endTime = nanoTime();
+    pthread_mutex_lock(&mutex1);
+    cout << (double)(endTime - startTime) / 1000000 << endl;
+    counter++;
+    pthread_mutex_unlock(&mutex1);
+    usleep(100000);
+  }
   cout << "Terminated...\n";
 }
 
-void
-commonBench ()
+void commonBench()
 {
   //Create multiply thread
   threadPool myThread;
-  myThread.create (commonBenchW);
-  myThread.join ();
+  myThread.create(commonBenchW);
+  myThread.join();
 }
 
-void*
-undefinedBenchW (void *dataPtr)
+void *
+undefinedBenchW(void *dataPtr)
 {
   tcpClient myClient;
   unsigned int startTime, endTime;
   randomize rndSrc;
-  srand (nanoTime ());
+  srand(nanoTime());
   string data = "GET ";
   char buffer[1024];
   while (!terminated)
-    {
-      data += rndSrc.getRandomPath (50, 100);
-      data += " HTTP/1.1\n";
-      data += "Host: ";
-      data += remoteHost;
-      data += "\n";
-      data += "Cookie: ";
-      data += rndSrc.getRandomCookie (200, 500);
-      data += "\n\n";
-      startTime = nanoTime ();
-      //----------------------
-      myClient.open ();
-      myClient.connect (serv_addr);
-      myClient.send ((void*) data.c_str (), (size_t) data.length ());
-      myClient.recv (buffer, 1023);
-      buffer[1023] = 0x0;
-      //cout << data << "\n";
-      //cout << buffer << "\n";
-      myClient.close ();
-      //----------------------
+  {
+    data += rndSrc.getRandomPath(50, 100);
+    data += " HTTP/1.1\n";
+    data += "Host: ";
+    data += remoteHost;
+    data += "\n";
+    data += "Cookie: ";
+    data += rndSrc.getRandomCookie(200, 500);
+    data += "\n\n";
+    startTime = nanoTime();
+    //----------------------
+    myClient.open();
+    myClient.connect(serv_addr);
+    myClient.send((void *)data.c_str(), (size_t)data.length());
+    myClient.recv(buffer, 1023);
+    buffer[1023] = 0x0;
+    //cout << data << "\n";
+    //cout << buffer << "\n";
+    myClient.close();
+    //----------------------
 
-      endTime = nanoTime ();
-      pthread_mutex_lock (&mutex1);
-      cout << (double) (endTime - startTime) / 1000000 << endl;
-      counter++;
-      pthread_mutex_unlock (&mutex1);
-      usleep (100000);
-    }
+    endTime = nanoTime();
+    pthread_mutex_lock(&mutex1);
+    cout << (double)(endTime - startTime) / 1000000 << endl;
+    counter++;
+    pthread_mutex_unlock(&mutex1);
+    usleep(100000);
+  }
   cout << "Terminated...\n";
 }
 
-void
-undefinedBench ()
+void undefinedBench()
 {
   //Create multiply thread
   threadPool myThread;
-  myThread.create (undefinedBenchW);
-  myThread.join ();
+  myThread.create(undefinedBenchW);
+  myThread.join();
 }

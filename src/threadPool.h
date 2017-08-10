@@ -3,12 +3,14 @@
 #define THREADPOOL_MAX 1024
 #include <pthread.h>
 
-class threadPool {
-private:
+class threadPool
+{
+  private:
     pthread_t threads[THREADPOOL_MAX];
-public:
+
+  public:
     threadPool();
-    void create(void* (*callBackFunction)(void * dataPtr));
+    void create(void *(*callBackFunction)(void *dataPtr));
     void join();
     ~threadPool();
 };
