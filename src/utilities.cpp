@@ -15,14 +15,24 @@ readFile(string fileName)
   vector<string> myStack;
   ifstream fileRead;
   string curLine;
-  fileRead.open(fileName.c_str(), ios::in | ios::app);
-  if (fileRead.is_open())
+  try
   {
-    while (getline(fileRead, curLine))
+    fileRead.open(fileName.c_str(), ios::in | ios::app);
+    if (fileRead.is_open())
     {
-      myStack.push_back(curLine);
+      while (getline(fileRead, curLine))
+      {
+        if (curLine.length() > 0)
+        {
+          myStack.push_back(curLine);
+        }
+      }
+      fileRead.close();
     }
-    fileRead.close();
+    return myStack;
   }
-  return myStack;
+  catch (...)
+  {
+    return myStack;
+  }
 }

