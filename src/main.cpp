@@ -12,6 +12,7 @@
 #include <fstream>
 #include <signal.h>
 #include <vector>
+#include <atomic>
 #include "tcpClient.h"
 #include "threadPool.h"
 #include "utilities.h"
@@ -43,10 +44,6 @@ ushort port = 80;
 /* Terminator */
 bool terminated = false;
 
-/* Thread MUTEX */
-pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-int counter = 0;
-
 /* Common bench */
 void *commonBenchW(void *dataPtr);
 
@@ -61,10 +58,13 @@ void getAddrByName(const char *remoteHost, ushort remotePort, sockaddr_in *addrS
 #define checkParam(param) if (string(argv[c]).compare(param) == 0 && c + 1 < argc)
 #define checkValue(value) if (string(argv[c]).compare(value) == 0)
 
+std::atomic<int> threadCount;
+
 /* Just common thing */
 int main(int argc, char *argv[])
 {
   threadPool myThread;
+  threadCount = 0;
   for (int c = 0; c < argc; c++)
   {
     //Host param
@@ -149,37 +149,37 @@ commonBenchW(void *dataPtr)
   randomize rndSrc;
   srand(nanoTime());
   httpRequest request;
-  
+  char buffer[1024];
+  char *data = nullptr;
+  int myThreadId = threadCount++;
+
   request.push("Host", hostName);
   request.push("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0");
   request.push("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
   request.push("Accept-Language", "en-US,en;q=0.5");
   request.push("Accept-Encoding", "deflate, br");
   request.push("Connection", "keep-alive");
-  char buffer[1024];
-  if (queries.size() > 0)
-  {
-    request.uri = queries[rand() % queries.size()];
-  }
-  if (userAgents.size() > 0)
-  {
-    request.eraseField("User-Agent");
-    request.push("User-Agent", userAgents[rand() % userAgents.size()]);
-  }
-
-  string data = request.get();
   while (!terminated)
   {
 
+    if (queries.size() > 0)
+    {
+      request.uri = queries[rand() % queries.size()];
+    }
+    if (userAgents.size() > 0)
+    {
+      request.eraseField("User-Agent");
+      request.push("User-Agent", userAgents[rand() % userAgents.size()]);
+    }
+
+    data = request.get();
     myClient.open();
     myClient.connect(serverAddr);
-
-    myClient.send((void *)data.c_str(), (size_t)data.length());
+    myClient.send((void *)data, (size_t)strlen(data));
     myClient.recv(buffer, 1023);
     buffer[1023] = 0x0;
     myClient.close();
   }
-  cout << "Terminated...\n";
 }
 
 void getAddrByName(const char *remoteHost, ushort remotePort, sockaddr_in *addrServer)
@@ -201,6 +201,8 @@ void getAddrByName(char *remoteHost, ushort remotePort, sockaddr_in *addrServer)
 void eventHandler(int signal)
 {
   //Wait for it
-  cout << "\nDude we are falling...\n";
-  terminated = true;
+  if(!terminated){
+    cout << "\nTerminating threads...\n";
+    terminated = true;
+  }
 }
