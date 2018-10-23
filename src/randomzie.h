@@ -2,13 +2,12 @@
 #define RANDOMIZE_H
 #define RANDOMIZE_BUFFER_LEN 100
 
-#include <stdlib.h>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 
-class randomize
-{
+class randomize {
   public:
     randomize();
     long getRandomNumber(size_t min, size_t max);

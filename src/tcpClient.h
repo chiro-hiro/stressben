@@ -1,14 +1,14 @@
 #ifndef TCPCLIENT_H
 #define TCPCLIENT_H
 
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 typedef enum {
     TCPCLIENT_SOCKET_NEW = 0,
@@ -24,8 +24,7 @@ typedef enum {
     TCPCLIENT_SOCKET_ERROR = 10
 } socketStatus;
 
-class tcpClient
-{
+class tcpClient {
   private:
     int fd;
     socketStatus status;

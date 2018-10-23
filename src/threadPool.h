@@ -3,8 +3,7 @@
 #define THREADPOOL_MAX 1024
 #include <pthread.h>
 
-class threadPool
-{
+class threadPool {
   private:
     pthread_t threads[THREADPOOL_MAX];
 

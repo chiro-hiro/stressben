@@ -1,18 +1,16 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#include <time.h>
-#include <iostream>
-#include <vector>
-#include <string>
 #include <fstream>
+#include <iostream>
+#include <string>
+#include <time.h>
+#include <vector>
 
 using namespace std;
 
-unsigned int
-nanoTime();
+unsigned int nanoTime();
 
-vector<string>
-readFile(string fileName);
+vector<string> readFile(string fileName);
 
 #endif /* UTILITIES_H */

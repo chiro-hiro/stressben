@@ -1,38 +1,28 @@
 #include "utilities.h"
 
-unsigned int
-nanoTime()
-{
-  struct timespec ts;
-  // clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
-  clock_gettime(CLOCK_REALTIME, &ts); // Works on Linux
-  return ts.tv_nsec;
+unsigned int nanoTime() {
+    struct timespec ts;
+    // clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
+    clock_gettime(CLOCK_REALTIME, &ts); // Works on Linux
+    return ts.tv_nsec;
 }
 
-vector<string>
-readFile(string fileName)
-{
-  vector<string> myStack;
-  ifstream fileRead;
-  string curLine;
-  try
-  {
-    fileRead.open(fileName.c_str(), ios::in | ios::app);
-    if (fileRead.is_open())
-    {
-      while (getline(fileRead, curLine))
-      {
-        if (curLine.length() > 0)
-        {
-          myStack.push_back(curLine);
+vector<string> readFile(string fileName) {
+    vector<string> myStack;
+    ifstream fileRead;
+    string curLine;
+    try {
+        fileRead.open(fileName.c_str(), ios::in | ios::app);
+        if (fileRead.is_open()) {
+            while (getline(fileRead, curLine)) {
+                if (curLine.length() > 0) {
+                    myStack.push_back(curLine);
+                }
+            }
+            fileRead.close();
         }
-      }
-      fileRead.close();
+        return myStack;
+    } catch (...) {
+        return myStack;
     }
-    return myStack;
-  }
-  catch (...)
-  {
-    return myStack;
-  }
 }

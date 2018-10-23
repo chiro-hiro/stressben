@@ -8,8 +8,7 @@ using namespace std;
 
 #define eOL "\r\n";
 
-class httpRequest
-{
+class httpRequest {
   private:
     vector<string> field;
     vector<string> value;
