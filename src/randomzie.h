@@ -1,7 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <stdlib.h>
+#include <sys/random.h>
 
 using namespace std;
 

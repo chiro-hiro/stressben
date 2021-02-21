@@ -1,39 +1,32 @@
-#ifndef HTTP_REQUEST_H
-#define HTTP_REQUEST_H
+#pragma once
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 using namespace std;
 
 #define eOL "\r\n";
 
-class httpRequest {
-  private:
-    vector<string> field;
-    vector<string> value;
+class httpRequest
+{
+private:
+  vector<string> field;
+  vector<string> value;
 
-  public:
-    string method;
-    string uri;
-    string version;
-    string body;
-    httpRequest();
+public:
+  string method;
+  string uri;
+  string version;
+  string body;
+  httpRequest();
 
-    void push(const char *fName, string fValue);
-    void push(const char *fName, const char *fValue);
-    void push(char *fName, char *fValue);
+  void push(string fName, string fValue);
 
-    bool eraseField(const char *fName);
-    bool eraseField(char *fName);
-    bool eraseField(string fName);
+  bool eraseField(string fName);
 
-    bool eraseValue(const char *fName);
-    bool eraseValue(char *fName);
-    bool eraseValue(string fName);
+  bool eraseValue(string fValue);
 
-    char *get();
-    ~httpRequest();
+  string get();
+  ~httpRequest();
 };
-
-#endif /* HTTP_REQUEST_H */
