@@ -1,21 +1,17 @@
-#ifndef RANDOMIZE_H
-#define RANDOMIZE_H
-#define RANDOMIZE_BUFFER_LEN 100
+#pragma once
 
 #include <iostream>
 #include <stdlib.h>
 
 using namespace std;
 
-class randomize {
-  public:
-    randomize();
-    long getRandomNumber(size_t min, size_t max);
-    string getRandomCookie(size_t min, size_t max);
-    string getRandomPath(size_t min, size_t max);
-    string getRandomParam(size_t min, size_t max);
-    string getRandomValue(size_t min, size_t max);
-    ~randomize();
+namespace randomize
+{
+  uint32_t rangeInt(uint32_t min, uint32_t max);
+  string queryString(uint32_t min, uint32_t max);
+  string cookie(uint32_t min, uint32_t max);
+  string path(uint32_t min, uint32_t max);
+  string paramName(uint32_t min, uint32_t max);
+  string json(uint32_t min, uint32_t max);
+  string escapedValue(uint32_t min, uint32_t max);
 };
-
-#endif /* RANDOMIZE_H */

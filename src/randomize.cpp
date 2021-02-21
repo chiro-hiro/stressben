@@ -1,66 +1,126 @@
+#include <iostream>
+#include <sstream>
+#include <sys/random.h>
 #include "randomzie.h"
 #include "utilities.h"
 
-#define RANDOMIZE_MIN_COOKIE_LEN 5
-#define RANDOMIZE_MAX_COOKIE_LEN 15
-#define RANDOMIZE_MIN_COOKIE_VALEN 10
-#define RANDOMIZE_MAX_COOKIE_VALEN 20
-#define RANDOMIZE_MIN_PATH_LEN 5
-#define RANDOMIZE_MAX_PATH_LEN 10
-
-randomize::randomize() { srand(nanoTime()); }
-
-long randomize::getRandomNumber(size_t min, size_t max) {
-    return min + rand() % (max - min + 1);
+uint32_t randomize::rangeInt(uint32_t min, uint32_t max)
+{
+    uint32_t bufVal = 0;
+    getrandom(&bufVal, sizeof(uint32_t), GRND_NONBLOCK);
+    return bufVal % (max - min) + min;
 }
 
-string randomize::getRandomCookie(size_t min, size_t max) {
-    string buffer("");
-    max = randomize::getRandomNumber(min, max);
-    for (size_t len = 0; len < max; len++) {
-        buffer += randomize::getRandomParam(RANDOMIZE_MIN_COOKIE_LEN,
-                                            RANDOMIZE_MAX_COOKIE_LEN);
-        buffer += "=";
-        buffer += randomize::getRandomParam(RANDOMIZE_MIN_COOKIE_VALEN,
-                                            RANDOMIZE_MAX_COOKIE_VALEN);
-        buffer += "; ";
+string randomize::cookie(uint32_t min, uint32_t max)
+{
+    stringstream buffer("");
+    uint32_t len = randomize::rangeInt(min, max);
+    for (uint32_t i = 0; i < len; i++)
+    {
+        buffer << randomize::paramName(6, 12)
+               << "="
+               << randomize::paramName(12, 32)
+               << "; ";
     }
-    return buffer;
+    return buffer.str();
 }
 
-string randomize::getRandomPath(size_t min, size_t max) {
-    string buffer("");
-    max = randomize::getRandomNumber(min, max);
-    for (size_t len = 0; len < max; len++) {
-        buffer += "/";
-        buffer += randomize::getRandomParam(RANDOMIZE_MIN_PATH_LEN,
-                                            RANDOMIZE_MAX_PATH_LEN);
+string randomize::queryString(uint32_t min, uint32_t max)
+{
+    stringstream buffer("");
+    uint32_t len = randomize::rangeInt(min, max);
+    for (uint32_t i = 0; i < len; i++)
+    {
+        if (i > 0)
+        {
+            buffer << "&";
+        }
+        buffer << randomize::paramName(6, 12)
+               << "="
+               << randomize::escapedValue(64, 128);
     }
-    return buffer;
+    return buffer.str();
 }
 
-string randomize::getRandomParam(size_t min, size_t max) {
-    string buffer("");
-    max = randomize::getRandomNumber(min, max);
-    for (size_t len = 0; len < max; len++) {
-        buffer += (char)randomize::getRandomNumber('a', 'z');
+string randomize::path(uint32_t min, uint32_t max)
+{
+    stringstream buffer("");
+    uint32_t len = randomize::rangeInt(min, max);
+    for (uint32_t i = 0; i < len; i++)
+    {
+        buffer << "/" << randomize::paramName(4, 12);
     }
-    return buffer;
+    return buffer.str();
 }
 
-string randomize::getRandomValue(size_t min, size_t max) {
-    char mapping[] = {
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-    };
-    string buffer("");
-    max = randomize::getRandomNumber(min, max);
-    for (size_t len = 0; len < max; len++) {
-        buffer += "%";
-        buffer += mapping[randomize::getRandomNumber(0, 15)];
-        buffer += mapping[randomize::getRandomNumber(0, 15)];
+string randomize::paramName(uint32_t min, uint32_t max)
+{
+    stringstream buffer("");
+    uint32_t len = randomize::rangeInt(min, max);
+    uint32_t tick = 0;
+    for (uint32_t i = 0; i < len; i++)
+    {
+        tick = randomize::rangeInt(0, 100);
+        if (tick < 40)
+        {
+            buffer << (char)randomize::rangeInt('a', 'z');
+        }
+        else if (tick > 60)
+        {
+            buffer << (char)randomize::rangeInt('A', 'Z');
+        }
+        else
+        {
+            buffer << (char)randomize::rangeInt('0', '9');
+        }
     }
-    return buffer;
+    return buffer.str();
 }
 
-randomize::~randomize() {}
+string randomize::escapedValue(uint32_t min, uint32_t max)
+{
+    stringstream buffer("");
+    uint32_t len = randomize::rangeInt(min, max);
+    char *buf = new char[len];
+    getrandom(buf, len, GRND_NONBLOCK);
+    uint32_t charRead = 0;
+    for (uint32_t i = 0; i < len; i++)
+    {
+        charRead = (0xff & buf[i]);
+        if ((charRead >= 48 && charRead <= 57) || (charRead >= 65 && charRead <= 90) || (charRead >= 97 && charRead <= 122) || charRead == 64)
+        {
+            buffer << buf[i];
+        }
+        else if (charRead == 0)
+        {
+            buffer << "%20";
+        }
+        else
+        {
+            if (charRead <= 0xf)
+            {
+                buffer << "%0" << hex << charRead;
+            }
+            else
+            {
+                buffer << "%" << hex << charRead;
+            }
+        }
+    }
+    delete buf;
+    return buffer.str();
+}
+
+string randomize::json(uint32_t min, uint32_t max)
+{
+    stringstream buffer("");
+    stringstream close("");
+    uint32_t len = randomize::rangeInt(min, max);
+    for (uint32_t i = 0; i < len; i++)
+    {
+        buffer << "{\"" << randomize::paramName(6, 12) << "\":";
+        close << "}";
+    }
+    buffer << "1" << close.str();
+    return buffer.str();
+}
